@@ -24,11 +24,30 @@
 	<div class="entry-content">
 		<?php
 			/* translators: %s: Name of current post */
-			the_content( sprintf(
-				__( 'Continue reading<span class="screen-reader-text"> "%s"</span>', 'twentysixteen' ),
-				get_the_title()
-			) );
-
+			if(class_exists( 'Groups_Post_Access' ) && method_exists( 'Groups_Post_Access', 'user_can_read_post' ))
+			{
+				if(Groups_Post_Access::user_can_read_post( $post->ID ))
+				{
+					the_content( sprintf(
+						__( 'Continue reading<span class="screen-reader-text"> "%s"</span>', 'twentysixteen' ),
+						get_the_title()
+					) );
+				}
+				else
+				{
+					the_content( sprintf(
+						__( '', 'twentysixteen' ),
+						get_the_title()
+					) );
+				}
+			}
+			else
+			{
+				the_content( sprintf(
+						__( 'Continue reading<span class="screen-reader-text"> "%s"</span>', 'twentysixteen' ),
+						get_the_title()
+					) );
+			}
 			wp_link_pages( array(
 				'before'      => '<div class="page-links"><span class="page-links-title">' . __( 'Pages:', 'twentysixteen' ) . '</span>',
 				'after'       => '</div>',
