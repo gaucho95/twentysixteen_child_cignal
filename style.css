@@ -1,0 +1,97 @@
+/*
+Theme Name: Twenty Sixteen Child
+Theme URI: https://wordpress.org/themes/twentysixteen/
+Author: Andrew Schmitt
+Author URI: https://cignal.ai/
+Description: Based on Twentysixteen 1.1
+Version: 1.1
+License: GNU General Public License v2 or later
+License URI: http://www.gnu.org/licenses/gpl-2.0.html
+Tags:
+Text Domain: twentysixteen
+Template: twentysixteen
+*/
+
+/* Get rid of powered by wordpress */
+.site-info {
+	display: none;
+}
+
+/* No nav links at end of post */
+.single-post .post-navigation {
+	display: none;
+}
+
+/* Get rid of post type for asides */
+.entry-format {
+	display: none !important;
+}
+
+
+/* Force small margin between posts regardless of screen width */
+.site-main > article {
+	margin-bottom: 3.5em;
+}
+
+
+/* Changed Body text to match heading fonts */
+
+body, button, input, select, textarea {
+	font-family: Montserrat, "Helvetica Neue", sans-serif;
+}
+
+/* Table styling http://www.tablesgenerator.com/ */
+.tg  {border-collapse:collapse;border-spacing:0;border-color:#aaa;}
+
+.tg {width: auto !important;}
+.tg col {width: auto !important;}
+.tg-wrap {overflow-x: auto;-webkit-overflow-scrolling: touch;}
+
+.tg td{font-size:14px;padding:10px 5px;border-style:solid;border-width:0px;overflow:hidden;word-break:normal;border-color:#aaa;color:#333;background-color:#fff;border-top-width:1px;border-bottom-width:1px;}
+
+.tg th{font-size:14px;font-weight:bold;padding:10px 5px;border-style:solid;border-width:0px;overflow:hidden;word-break:normal;border-color:#aaa;color:#fff;background-color:#f38630;border-top-width:1px;border-bottom-width:1px;}
+
+.tg .tg-header{background-color:#da4900;text-align:center}
+.tg .tg-shade{background-color:#efefef;vertical-align:top}
+.tg .tg-clear{vertical-align:top}
+.tg .tg-center{background-color:#ffffff;text-align:center}
+
+
+/* NO LONGER USED */
+
+/* Don't Display Categories */
+/* .cat-links {
+	display: none !important;
+} */
+
+/* Get rid of title for asides */
+/* .format-aside .entry-title {
+	display: none !important;
+} */
+
+/* Style site title Cignal AI (NO LONGER NEEDED WITH LOGO IMAGE)
+
+.title-prefix {
+	color: #DA4900;
+	font-size: 23px;
+	font-size: 1.4375rem;
+}
+.title-suffix {
+	color: #808080;
+	font-size: 15px;
+	font-size: 0.96rem;
+}
+
+
+@media screen and (min-width: 44.375em) {
+.title-prefix {
+	color: #DA4900;
+	font-size: 28px;
+	font-size: 1.75rem;
+}
+.title-suffix {
+	color: #808080;
+	font-size: 18px;
+	font-size: 1.17rem;
+}
+} */
