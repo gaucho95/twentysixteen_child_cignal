@@ -8,6 +8,57 @@ function theme_enqueue_styles() {
     wp_enqueue_style( 'parent-style', get_template_directory_uri() . '/style.css' );
 }
 
+
+function custom_wp_trim_excerpt($text) 
+{
+	$raw_excerpt = $text;
+	if ( $text == '' ) 
+	{
+		$text = get_the_content();
+	 
+		$text = strip_shortcodes( $text );
+	 
+		$text = apply_filters('the_content', $text);
+		$text = str_replace(']]>', ']]&gt;', $text);
+		 
+		/***Add the allowed HTML tags separated by a comma.***/
+		$allowed_tags = '<p>,<a>,<em>,<strong>,<b>,<i>,<br>,<div>';  
+		$text = strip_tags($text, $allowed_tags);
+		 
+		/***Change the excerpt word count.***/
+		$excerpt_word_count = 60; 
+		$excerpt_length = apply_filters('excerpt_length', $excerpt_word_count); 
+		 
+		/*** Change the excerpt ending.***/
+		$excerpt_end = '<a href="'. get_permalink($post->ID) . '">' . '&raquo; Continue Reading' . '</a>'; 
+		$excerpt_more = apply_filters('excerpt_more', ' ' . $excerpt_end);
+		 
+		$words = preg_split("/[\n\r\t ]+/", $text, $excerpt_length + 1, PREG_SPLIT_NO_EMPTY);
+		if ( count($words) > $excerpt_length ) 
+		{
+			array_pop($words);
+			$text = implode(' ', $words);
+			if(Groups_Post_Access::user_can_read_post( $post->ID ))
+			{
+				$text = $text . $excerpt_more;
+			}
+			else
+			{
+				$text .= '...';
+			}
+		} 
+		else 
+		{
+			$text = implode(' ', $words);
+		}
+	}
+	
+	return apply_filters('wp_trim_excerpt', $text);
+}
+
+remove_filter('get_the_excerpt', 'wp_trim_excerpt', 1);
+add_filter('get_the_excerpt', 'custom_wp_trim_excerpt', 1);
+
 /**
  * An example of how to show excerpts for posts protected by Groups.
  */
@@ -31,25 +82,126 @@ if (
 	 */
 	function groups_excerpts_the_content( $output ) {
 		global $post;
-		$result = '';
+		$user_id = get_current_user_id();
+		$excerpt = "Requires ";
+		
+		/* Example : $excluded = array('optxr' => 1); */
+		$excluded = array();
+		
 		if ( isset( $post->ID ) ) {
-			if ( Groups_Post_Access::user_can_read_post( $post->ID ) ) {
-				$result = $output;
-			} else {
-	
-				// show the excerpt
-				$result .= '<div>';
-				remove_filter( 'the_content', 'groups_excerpts_the_content', 1 );
-				$result .= apply_filters( 'get_the_excerpt', $post->post_excerpt );
-				add_filter( 'the_content', 'groups_excerpts_the_content', 1 );
-				$result .= '</div>';
-	
-				// and add information to show that the content requires special access
-				$result .= '<div>';
-				$result .= '<p>';
-				$result .= __( '<i>(Subscription Required)</i>', 'groups-excerpts' );
-				$result .= '</p>';
-				$result .= '</div>';
+			if ( Groups_Post_Access::user_can_read_post( $post->ID ) ) 
+			{
+				if(is_single())
+				{
+					$result = $output;
+				}
+				else 
+				{
+					$content = get_post_field( 'post_content', $post->ID );
+					$content_parts = get_extended( $content );
+					
+					if(strpos($content, '<!--more-->'))
+					{
+						return $content_parts['main'] . '<a href="'. get_permalink($post->ID) . '">' . 'Continue Reading' . '</a><br>';
+					}
+					
+					if($post->post_excerpt != '')
+					{			
+						$read_caps = Groups_Post_Access::get_read_post_capabilities( $post->ID );
+						if(empty($read_caps))
+						{
+							$result = apply_filters( 'get_the_excerpt', $post->post_excerpt );
+							$result .= '<br><a href="'. get_permalink($post->ID) . '">' . 'Continue Reading' . '</a><br>';
+						}		
+						else
+						{
+							$result = $output;
+						}
+					}
+					else 
+					{
+						$result = $output;
+					}
+				}
+			} 
+			else 
+			{
+				$term_id = $post->ID;
+				
+				$groups_user = new Groups_User( $user_id );
+				$read_caps = Groups_Post_Access::get_read_post_capabilities( $term_id );
+				
+				$read_caps2 = array();
+				if ( !empty( $read_caps ) ) {
+					foreach( $read_caps as $read_cap ) {
+						$read_caps2[$read_cap] = 1;
+					}
+				}
+
+				$grc_term_read_caps = get_option( 'grc_term_read_capabilities', array() );
+				
+				$i = 0;
+				foreach($grc_term_read_caps as $key=>$read_caps)
+				{
+					foreach($read_caps as $read_cap)
+					{
+						if($read_caps2[$read_cap])
+						{
+							$category = get_category($key, 'OBJECT');
+							
+							$category_name = $category->name;
+							$category_slug = $category->slug;
+							
+							if(!isset($excluded[$category_slug]) || !$excluded[$category_slug])
+							{
+								if($i)
+								{
+									$excerpt .= 'or <a href="' . get_category_link($category->cat_ID). '">' . $category_name . "</a> ";
+								}
+								else 
+								{
+									$excerpt .= '<a href="' . get_category_link($category->cat_ID). '">' . $category_name . "</a> ";
+								}
+								$i++;
+							}
+							
+							$excluded[$category_slug] = 1;
+						}
+					}
+				}
+				$excerpt .= "subscription.";
+				
+				$content = get_post_field( 'post_content', $post->ID );
+				$content_parts = get_extended( $content );
+				
+				if(strpos($content, '<!--more-->'))
+				{
+					return $content_parts['main'] . '<i>' . $excerpt . '</i>';
+				}
+				
+				if($post->post_excerpt == '')
+				{
+					// show the excerpt
+					$result .= '<div>';
+					remove_filter( 'the_content', 'groups_excerpts_the_content', 1 );
+					$result .= apply_filters( 'get_the_excerpt', $post->post_excerpt );
+					add_filter( 'the_content', 'groups_excerpts_the_content', 1 );
+					$result .= '</div>';
+					
+					// and add information to show that the content requires special access
+					$result .= '<div>';
+					$result .= '<p>';
+					$result .= __( '<i>' . $excerpt . '</i>', 'groups-excerpts' );
+					$result .= '</p>';
+					$result .= '</div>';
+				}
+				else 
+				{
+					remove_filter( 'the_content', 'groups_excerpts_the_content', 1 );
+					$result = apply_filters( 'get_the_excerpt', $post->post_excerpt );
+					add_filter( 'the_content', 'groups_excerpts_the_content', 1 );
+					$result .= '<a href="'. get_permalink($post->ID) . '">' . '</a><br>' . '<i>' . $excerpt . '</i>';
+				}
 			}
 		} else {
 			// not a post, don't interfere
